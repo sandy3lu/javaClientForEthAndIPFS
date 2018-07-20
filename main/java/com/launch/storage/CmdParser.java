@@ -2,21 +2,28 @@ package com.launch.storage;
 
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.EventQueue;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-
+import java.awt.Image;
 import java.awt.Insets;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -40,6 +47,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -62,8 +70,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.EventObject;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.Timer;
@@ -83,7 +93,10 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JLayeredPane;
 import javax.swing.JList;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -96,22 +109,36 @@ import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.LookAndFeel;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.SwingWorker;
 import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.WindowConstants;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.event.MenuKeyEvent;
+import javax.swing.event.MenuKeyListener;
 import javax.swing.event.MouseInputAdapter;
 import javax.swing.event.MouseInputListener;
+import javax.swing.plaf.TabbedPaneUI;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 
 import org.bouncycastle.util.Strings;
+import org.pushingpixels.substance.api.SubstanceConstants.ImageWatermarkKind;
+import org.pushingpixels.substance.api.SubstanceLookAndFeel;
+import org.pushingpixels.substance.api.SubstanceSkin;
+import org.pushingpixels.substance.api.skin.*;
+
+import org.pushingpixels.substance.api.watermark.SubstanceImageWatermark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.web3j.crypto.CipherException;
@@ -165,7 +192,8 @@ public class CmdParser {
 	static DefaultTableModel dtmFileList;
 	static  JButton button_add ;
 	static JFrame frameShowed;
-	
+	static JFrame ff_process;
+	static Map<String, JLabel> map=new HashMap<>();
 	static JSONArray arr;
 	//static JSONArray arr_tx;
 	static DefaultListModel<String> lstModel_share;
@@ -222,7 +250,7 @@ public class CmdParser {
 							
 							 credentials =WalletUtils.loadCredentials(pass, con.getKeyStore());		 
 								
-						    BigInteger gasPrice = Convert.toWei("0", Convert.Unit.GWEI).toBigInteger();
+						    BigInteger gasPrice = Convert.toWei("1", Convert.Unit.GWEI).toBigInteger();
 						    BigInteger gasLimit = new BigInteger("400000");
 								
 							contract = StorageCoin.load(contractAddress , web3, credentials, gasPrice, gasLimit);
@@ -302,17 +330,85 @@ public class CmdParser {
 	     ipfsNode = getIpfsNode();
 	 
 		  ps = new ProveStorage();		
-		
-		// Web3j web3 = Web3jFactory.build(new HttpService("http://wallet-api-test.launchain.org:50000/")); // android
 			web3 = Web3j.build(new HttpService(con.getHttpAddress()));
 			
+			JFrame.setDefaultLookAndFeelDecorated(true);
+			JDialog.setDefaultLookAndFeelDecorated(true);
 		
-			 showFrame();
+			 try {
+					UIManager.setLookAndFeel(new SubstanceBusinessLookAndFeel());
+				} catch (UnsupportedLookAndFeelException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}	
+			 
+			 SwingUtilities.invokeLater(new Runnable() {  
+	                public void run() {  
+	                    
+	                	showFrame(); //这个就是程序界面初始化
+	                }  
+	            });  
+			 
+			 SwingUtilities.invokeLater(new Runnable() {  
+	                public void run() {  
+	                    
+	                	ff_process = showProcessWindow(); //这个就是程序界面初始化
+	                }  
+	            });  
+			 
 			
-		
-		
+	}
+	
+	static JFrame showProcessWindow() {
+		JFrame   f   =   new   UndecoratedFrame( "正在进行的任务列表"); 
+		f.setSize(400,   400); 
+		f.setLocationRelativeTo(null); 
+		f.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE); 		
+		f.getContentPane().setLayout(new FlowLayout(FlowLayout.LEFT, 20, 40));// 向左对齐,水平间距是20，垂直间距为40像素
+		 f.setVisible(false);
+	    return f; 
 	}
 
+	static boolean sendAddTaskToProcess(String fileName, String fileHash, int _count) {
+		
+		
+		 SwingUtilities.invokeLater(new Runnable() {  
+	          public void run() {  
+	        	  JLabel ll = new JLabel(fileName);
+	        	  Timer timer = new Timer();
+	        	  //前一次执行程序结束后 2000ms 后开始执行下一次程序
+	              timer.schedule(new TimerTask() {
+	                  @Override
+	                  public void run() {
+	                	 
+	                	  JSONObject obj = getFileStorageFromServer(fileHash);
+	                	 
+	                      if(obj!=null) {
+	                    	 JSONArray count = obj.getJSONArray("info");
+	                    	 if (count.size() != 0) {
+	                    		 ll.setText(fileName + " " + count.size());
+	                    		 if (count.size()>= _count) {
+	                    			 return; // exit this task
+	                    		 }
+	                    		 ff_process.repaint();
+	                    		 System.out.println(fileName + " 已完成 " + count.size() +  "/" + _count);
+	                    	 }
+	                     }
+	                  }
+	              }, 0,2000);
+
+	        	  
+	        	  ff_process.getContentPane().add(ll);
+	              ff_process.setVisible(true);
+	          }  
+	      });  
+		 
+	     
+	return true;	 
+		
+	}
+	
+	
 	static int getCoinBalance() {
 		
 		if(!onLine) {	
@@ -463,6 +559,8 @@ public class CmdParser {
 			}
 	 }
 	 
+	 
+	 
 	 // get available space in G
 	 static float getSpace() {
 		 float totalHD=0;
@@ -531,7 +629,7 @@ public class CmdParser {
 		 return totalHD;
 	 }
 	
-	 // get IPFS used space, .ipfs\blocks\
+	 
 	 static int estimateValue(int size) {
 		 if(size>2048) {
 			 return 20;
@@ -695,9 +793,13 @@ public class CmdParser {
 	 }
 	 
 	static void showFrame() {
+		Dimension dimension = new Dimension(1400, 800);
+		final Point origin = new Point(200, 200);
+		boolean f_opaque = true;
+			
 		 frameShowed = new JFrame("元链网盘");
-	     frameShowed.setSize(1200, 600);
-	     frameShowed.setLocation(200, 200);
+	     frameShowed.setSize(dimension);	     
+	     frameShowed.setLocation(origin);
 	     frameShowed.setLayout(null);
 	     File f_img= new File("logo.png");
 	     if(f_img.exists()) {
@@ -707,23 +809,55 @@ public class CmdParser {
 	     MouseInputListener ml = new MouseInputAdapter() {};
 	     frameShowed.getGlassPane().addMouseListener(ml);
 	     frameShowed.getGlassPane().addMouseMotionListener(ml);
-	     
-         JTabbedPane jTabbedpane = new JTabbedPane();// 存放选项卡的组件  
-         String[] tabNames = { "共享", "用户" };  
-        
+	   	  
+	    
+	     Util.changeLook(frameShowed);
+	         
+	     JTabbedPane jTabbedpane = new JTabbedPane();// 存放选项卡的组件    
+	    
+         String[] tabNames = { "共享", "用户" };   
+         // 添加选项卡选中状态改变的监听器
+         jTabbedpane.addChangeListener(new ChangeListener() {
+             @Override
+             public void stateChanged(ChangeEvent e) {
+            	 //JPanel p = (JPanel) jTabbedpane.getSelectedComponent();
+            	 frameShowed.pack();
+            	
+             }
+         });
+                 
+       /*  
+	     JPanel panel_layer = new JPanel();
+	     panel_layer.setOpaque(false);
+	     JPanel panel_account = new JPanel();
+	     panel_account.setOpaque(false);
+	     panel_layer.setLayout(new BorderLayout());
+	     panel_layer.add(panel_account,BorderLayout.NORTH);
+	     panel_layer.add(jTabbedpane,BorderLayout.CENTER);
+	        
+	     GridBagLayout layout_account = new GridBagLayout();
+	     panel_account.setLayout(layout_account);
+	     GridBagConstraints s0= new GridBagConstraints();
+	     s0.insets = new Insets(2, 2, 2, 2); 
+	     s0.fill = GridBagConstraints.BOTH;
+        */ 
+         frameShowed.setContentPane(jTabbedpane);
+            
+	        
         // 第一个标签下的JPanel  
-        JPanel jpanelFirst = new JPanel();        
+        JPanel jpanelFirst = new JPanel();  		
         jTabbedpane.addTab(tabNames[0], null, jpanelFirst, "share");// 加入第一个页面  
         jTabbedpane.setMnemonicAt(0, KeyEvent.VK_0);// 设置第一个位置的快捷键为0  
         GridBagLayout layout = new GridBagLayout();
         jpanelFirst.setLayout(layout);
-        
+       // jpanelFirst.setOpaque(f_opaque);
         GridBagConstraints s= new GridBagConstraints();
         s.insets = new Insets(2, 2, 2, 2); // 组件彼此的间距
         s.fill = GridBagConstraints.BOTH;//使组件完全填满其显示区域
         
         // 第二个标签下的JPanel  
         JPanel jpanelSecond = new JPanel();  
+       // jpanelSecond.setOpaque(f_opaque);
         jTabbedpane.addTab(tabNames[1], null, jpanelSecond, "user");
         jTabbedpane.setMnemonicAt(1, KeyEvent.VK_1);// 设置快捷键为1  
         GridBagLayout layout2 = new GridBagLayout();
@@ -734,10 +868,9 @@ public class CmdParser {
         
        
         // first line  of panel 1      
-        JLabel lbl1 =new JLabel("钱包地址"); 
-        jpanelFirst.add(lbl1);
-        
-        JTextField txt_account = new JTextField(80);
+        JLabel lbl_account =new JLabel("钱包地址"); 
+        jpanelFirst.add(lbl_account);        
+        JTextField txt_account = new JTextField(26);
         txt_account.setEnabled(false); 
         jpanelFirst.add(txt_account);  
         JButton button_login= new JButton("登录");       
@@ -767,17 +900,43 @@ public class CmdParser {
 				
 			} });
         
-        JPanel pan_fill = new JPanel();       
-        
+        JPanel pan_fill_exit = new JPanel();       
+        pan_fill_exit.setOpaque(f_opaque);
         jpanelFirst.add(button_login);        
-        jpanelFirst.add(button_change); 
-        
-        jpanelFirst.add(pan_fill); 
+        jpanelFirst.add(button_change);
+        jpanelFirst.add(pan_fill_exit); 
         jpanelFirst.add(button_exit); 
+       
+        
+        s.gridwidth=1;//该方法是设置组件水平所占用的格子数
+        s.weightx = 0;//该方法设置组件水平的拉伸幅度，如果为0就说明不拉伸，不为0就随着窗口增大进行拉伸，0到1之间
+        s.weighty=0;//该方法设置组件垂直的拉伸幅度
+        layout.setConstraints(lbl_account, s);
+        s.gridwidth=20;      
+        s.weightx = 0;       
+        s.fill = GridBagConstraints.BOTH;
+        layout.setConstraints(txt_account, s);
+        s.fill = GridBagConstraints.NONE;
+        s.gridwidth=1;
+        s.weightx = 0;
+        s.weighty=0;
+        layout.setConstraints(button_login, s);//设置组件
+        s.gridwidth=1;
+        s.weightx = 0;
+        s.weighty=0;
+        layout.setConstraints(button_change, s);//设置组件       
+        s.gridwidth=10;
+        s.weightx = 1;
+        s.weighty=0;
+        layout.setConstraints(pan_fill_exit, s);//设置组件    
+        s.gridwidth=GridBagConstraints.REMAINDER;//GridBagConstraints.REMAINDER为0，就说明该组件是该行的最后一个
+        s.weightx = 0;
+        s.weighty=0;
+        layout.setConstraints(button_exit, s);//设置组件
         
        // line 1 of panel 2 == panel 1
-        JLabel lbl2 =new JLabel(lbl1.getText());   
-        JTextField txt2 = new JTextField(80);
+        JLabel lbl2 =new JLabel(lbl_account.getText());   
+        JTextField txt2 = new JTextField();
         txt2.setText(txt_account.getText());
        
         JButton button_delete = new JButton("删除"); 
@@ -819,11 +978,10 @@ public class CmdParser {
         });  
         
         jpanelSecond.add(lbl2);
-        jpanelSecond.add(txt2);
-       
-        txt2.setEnabled(false);
-        
+        jpanelSecond.add(txt2);       
+        txt2.setEnabled(false);        
        JPanel pan_fill2 = new JPanel();
+       pan_fill2.setOpaque(f_opaque);
        jpanelSecond.add(pan_fill2); 
         
         // second line of panel 1
@@ -831,13 +989,18 @@ public class CmdParser {
         jpanelFirst.add(lbl_balance);//1.2
         
         
-        JButton button_test = new JButton("获取测试币");
-        
+        JButton button_test = new JButton("获取测试币");        
         button_test.addActionListener(new ActionListener(){       	 
            	@Override
 			public void actionPerformed(ActionEvent arg0) {
            		
            		if(onLine) {
+           			
+           			int value = getCoinBalance();
+           			if(value>1) {
+           				JOptionPane.showMessageDialog(null, "只有余额低于1才能获取");
+           				return;
+           			}
            			BigInteger gasPrice = Convert.toWei("0", Convert.Unit.GWEI).toBigInteger();
 				    BigInteger gasLimit = new BigInteger("400000");
 						
@@ -846,19 +1009,19 @@ public class CmdParser {
            			try {
 						TransactionReceipt transactionReceipt = CmdParser.trcontract.tokenRewards().sendAsync().get();
 						if(transactionReceipt.getStatus().contains("1")) {
-							JOptionPane.showMessageDialog(jpanelFirst, "成功获取");
+							JOptionPane.showMessageDialog(null, "成功获取");
 							getCoinBalance();
 						}else {
-							JOptionPane.showMessageDialog(jpanelFirst, "获取失败，只有余额低于1才能获取");
+							JOptionPane.showMessageDialog(null, "获取失败，只有余额低于1才能获取");
 							logfile.error("button_test fail, tx=" + transactionReceipt.toString());
 						}
 					} catch (InterruptedException | ExecutionException e) {
 						
-						e.printStackTrace();
+						logfile.error("button_test fail " + e.toString());
 					}
            			
            		}else {
-           			JOptionPane.showMessageDialog(jpanelFirst, "请先登陆"); 
+           			JOptionPane.showMessageDialog(null, "请先登陆"); 
            		}
             
            	}  
@@ -866,22 +1029,23 @@ public class CmdParser {
         });  
         
         jpanelFirst.add(button_test);
-        JPanel jpanel1 = new JPanel();          
-        jpanelFirst.add(jpanel1);//fill Gap
+        JPanel pan_fill_12 = new JPanel(); 
+        pan_fill_12.setOpaque(f_opaque);
+        jpanelFirst.add(pan_fill_12);//fill Gap
         
         
      // second line of panel 2
         lbl_balance2 =new JLabel(lbl_balance.getText());  
-        jpanelSecond.add(lbl_balance2);//2, same with first 
-        
-        JPanel jpanel2 = new JPanel();  
+        jpanelSecond.add(lbl_balance2);//2, same with first         
+        JPanel jpanel2 = new JPanel(); 
+        jpanel2.setOpaque(f_opaque);
         jpanelSecond.add(jpanel2);//fill Gap
       
         
         // third line of panel 1        
         JLabel lbl3 =new JLabel("空间大小(G):");  
-        JButton button_done = new JButton("确定");
-        button_done.setEnabled(false);
+        JButton button_cap = new JButton("确定");
+        button_cap.setEnabled(false);
         JTextField txt_ipfsCap = new JTextField(8);
         txt_ipfsCap.setText(Util.getIpfsCapacity(ipfsDir));       
         txt_ipfsCap.getDocument().addDocumentListener(new DocumentListener() {
@@ -903,7 +1067,7 @@ public class CmdParser {
 							return;
 						}
 					}
-					button_done.setEnabled(true);
+					button_cap.setEnabled(true);
 				}
 			}
 			@Override
@@ -913,10 +1077,10 @@ public class CmdParser {
 			}  });
                 
         
-        button_done.addActionListener(new ActionListener(){       	 
+        button_cap.addActionListener(new ActionListener(){       	 
            	@Override
 			public void actionPerformed(ActionEvent arg0) {
-           		button_done.setEnabled(false);
+           		button_cap.setEnabled(false);
            	 float used_d = Util.getDirSize(new File(ipfsDir))/1024;
            	  float total_available = getSpace();
            	  String num = txt_ipfsCap.getText().trim();
@@ -927,7 +1091,7 @@ public class CmdParser {
            		return;
            	  }
            		if(Util.updateIpfsCapacity(num, ipfsDir)) {
-           			JOptionPane.showMessageDialog(jpanelFirst, "更新IPFS配置成功!");
+           			JOptionPane.showMessageDialog(jpanelFirst, "更新IPFS配置成功，重启客户端之后生效!");
            		}
            		
            	}
@@ -935,7 +1099,7 @@ public class CmdParser {
         
         jpanelFirst.add(lbl3);
         jpanelFirst.add(txt_ipfsCap);
-        jpanelFirst.add(button_done);
+        jpanelFirst.add(button_cap);
         
         JLabel lbl_used =new JLabel("");
         float used_d = Util.getDirSize(new File(ipfsDir));
@@ -946,9 +1110,7 @@ public class CmdParser {
         jpanelFirst.add(lbl_used );
         jpanelFirst.add(lbl_available);
         
-        JButton button_startIPFS = new JButton("IPFS上线");
-        button_startIPFS.setVisible(false);
-        
+               
         JButton button_detail = new JButton("节点详情...");      
         button_detail.addActionListener(new ActionListener(){ 
         	
@@ -1010,8 +1172,7 @@ public class CmdParser {
 	             if(testIpfsOnLine()) {
 	            	 lbl_onLine.setText("    相连节点: "+ peers.size() );	            	 
 	             }else {
-	            	 button_startIPFS.setEnabled(true);
-	            	 //button_startIPFS.setVisible(true);  
+	            	 
 	             }
 	             JSONObject obj = getNodes(0);
 	             if(obj!=null) {
@@ -1061,26 +1222,9 @@ public class CmdParser {
         }) 	;
         
         
-        jpanelFirst.add(button_detail);
-        
-        button_startIPFS.setEnabled(false);  
-        button_startIPFS.setVisible(false);  // TODO: do we need a button to restart ipfs?
-        button_startIPFS.addActionListener(new ActionListener(){ 
-        	
-           	@Override
-			public void actionPerformed(ActionEvent arg0) {
-           		try {
-           			
-               		thread_ipfsDaemon.start();
-           		} catch (Exception e) {
-           			logfile.error(e.toString());
-           		}
-           		 
-           	}});
-        
-        jpanelFirst.add(button_startIPFS);
-        
+        jpanelFirst.add(button_detail);              
         JPanel pan_fill1 = new JPanel();
+        pan_fill1.setOpaque(f_opaque);
         jpanelFirst.add(pan_fill1);
         
         JLabel lbl4 =new JLabel("交易流水:");   
@@ -1095,41 +1239,17 @@ public class CmdParser {
         
         jpanelFirst.add(b_refresh);//4
         JPanel ptmp = new JPanel();
+        ptmp.setOpaque(f_opaque);
         jpanelFirst.add(ptmp);//4
         
-         lstModel_share = new DefaultListModel<String>();
-        
+         lstModel_share = new DefaultListModel<String>();        
         JList jList1 = new JList(lstModel_share);
+        jList1.setOpaque(false);
         JScrollPane jscrollList1 = new JScrollPane(jList1);        
         jpanelFirst.add(jscrollList1);//5
         jList1.updateUI();
         jList1.setFont(Font.getFont("Courier New"));
-        s.gridwidth=1;//该方法是设置组件水平所占用的格子数
-        s.weightx = 0;//该方法设置组件水平的拉伸幅度，如果为0就说明不拉伸，不为0就随着窗口增大进行拉伸，0到1之间
-        s.weighty=0;//该方法设置组件垂直的拉伸幅度，如果为0就说明不拉伸，不为0就随着窗口增大进行拉伸，0到1之间
-        layout.setConstraints(lbl1, s);//设置组件
-        s.gridwidth=20;
-       // s.gridheight=2;
-        s.weightx = 1;
-       // s.weighty=1;
-        s.fill = GridBagConstraints.BOTH;
-        layout.setConstraints(txt_account, s);
-
-        
-        s.fill = GridBagConstraints.NONE;
-        s.gridwidth=1;//GridBagConstraints.REMAINDER为0，就说明该组件是该行的最后一个
-        s.weightx = 0;
-        s.weighty=0;
-        layout.setConstraints(button_login, s);//设置组件
-        s.gridwidth=1;//GridBagConstraints.REMAINDER为0，就说明该组件是该行的最后一个
-        s.weightx = 0;
-        s.weighty=0;
-        layout.setConstraints(button_change, s);//设置组件       
-        s.gridwidth=GridBagConstraints.REMAINDER;//GridBagConstraints.REMAINDER为0，就说明该组件是该行的最后一个
-        s.weightx = 0;
-        s.weighty=0;
-        layout.setConstraints(button_exit, s);//设置组件
-        
+      
         
         s.fill = GridBagConstraints.BOTH;
         s.gridwidth=1;
@@ -1144,7 +1264,7 @@ public class CmdParser {
         s.weightx = 0;
         s.weighty=0;
         s.fill = GridBagConstraints.NONE;
-        layout.setConstraints(button_done, s);
+        layout.setConstraints(button_cap, s);
         s.gridwidth=1;
         s.weightx = 0;
         s.weighty=0;
@@ -1157,41 +1277,35 @@ public class CmdParser {
         s.weightx = 0;
         s.weighty=0;
         s.fill = GridBagConstraints.NONE;
-        layout.setConstraints(button_detail, s);
-        s.gridwidth=1;
-        s.weightx = 0;
-        s.weighty=0;
-        s.fill = GridBagConstraints.NONE;
-        layout.setConstraints(button_startIPFS, s);
+        layout.setConstraints(button_detail, s);       
         s.gridwidth=GridBagConstraints.REMAINDER;//GridBagConstraints.REMAINDER为0，就说明该组件是该行的最后一个
         s.weightx = 0;
         s.weighty=0;
         layout.setConstraints(pan_fill1, s);//设置组件
         
-        s.gridwidth=2;
+        s.gridwidth=4;
         s.weightx = 1;
         s.weighty=0;
         s.fill = GridBagConstraints.BOTH;
         layout.setConstraints(lbl_balance, s);      
         s.gridwidth=2;
-        s.weightx = 1;
+        s.weightx = 0;
         s.weighty=0;
         s.fill = GridBagConstraints.BOTH;
         layout.setConstraints(button_test, s); 
         s.gridwidth=0;
+        s.weightx = 0;
+        s.weighty=0;
+        layout.setConstraints(pan_fill_12, s);   
+        
+        s.gridwidth=2;
         s.weightx = 1;
         s.weighty=0;
-        layout.setConstraints(jpanel1, s);   
-        
-        s.gridwidth=1;
-        s.weightx = 0;
-        s.weighty=0;
         layout.setConstraints(lbl4, s);   
-        s.gridwidth=1;
-        s.weightx = 0;
+        s.gridwidth=2;
+        s.weightx =1;
         s.weighty=0;
         layout.setConstraints(b_refresh, s);        
-        
         s.gridwidth=0;
         s.weightx = 0;
         s.weighty=0;
@@ -1238,8 +1352,9 @@ public class CmdParser {
 			private void showAddDialog() {
 				
 				JDialog  f = new JDialog (frameShowed, "上传文件", true);
-			     f.setSize(800, 200);
-			     f.setLocation(400, 400);
+			     f.setSize(1000, 250);
+			     //f.setLocation(400, 400);
+			     f.setLocationRelativeTo(null);
 			     f.setLayout(null);
 				JPanel j = new JPanel();
 				f.setContentPane(j);
@@ -1248,9 +1363,9 @@ public class CmdParser {
 				JLabel lcost = new JLabel("需要花费：");
 				
 				
-				JLabel ll = new JLabel("请选择文件：");
+				JLabel ll = new JLabel("文件名：");
 				 JButton b_choose = new JButton("浏览...");
-				 JTextArea txt_file = new JTextArea(2, 50);
+				 JTextArea txt_file = new JTextArea(2, 40);
 				 JScrollPane sp =  new JScrollPane(txt_file);
 				 txt_file.setEnabled(false);
 				 
@@ -1290,9 +1405,9 @@ public class CmdParser {
 					}});
 				JPanel p_firstline = new JPanel();
                p_firstline.setLayout(new FlowLayout());
-				p_firstline.add(ll);
+               p_firstline.add(ll);
 				p_firstline.add(sp);
-				p_firstline.add(b_choose);
+				 p_firstline.add(b_choose);
 				
 				j.add(p_firstline, BorderLayout.NORTH);
 				
@@ -1322,9 +1437,15 @@ public class CmdParser {
 							}
 							int count = Integer.valueOf(newCount);
 							if(count>10) {
-								JOptionPane.showMessageDialog(jpanelFirst, "最大10", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+								JOptionPane.showMessageDialog(jpanelFirst, "备份份数最大为10份", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+								//txt_copyNum.setText("3");
 								return;
 							}else {
+								if(count==0) {
+									JOptionPane.showMessageDialog(jpanelFirst, "备份份数最小为1份", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+									//txt_copyNum.setText("3");
+									return;
+								}	
 								// count value
 								String fileName = txt_file.getText().trim();
 								if(fileName.length()== 0) {
@@ -1388,20 +1509,38 @@ public class CmdParser {
 							
 							
 						}});
+				
 				 JButton b_ok = new JButton("确定");
 				 b_ok.addActionListener(new ActionListener() {
 
 					@Override
 					public void actionPerformed(ActionEvent e) {
-						
+						int copycount = Integer.valueOf(txt_copyNum.getText().trim());
+	                 	int month = Integer.valueOf((String) comboBox1.getSelectedItem())/30; 
+	                 	
+	                 	if(copycount<1) {
+	                 		JOptionPane.showMessageDialog(jpanelFirst, "备份份数最小为1份", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+							return;
+	                 	}
+	                 	if(copycount>10) {
+	                 		JOptionPane.showMessageDialog(jpanelFirst, "备份份数最大为10份", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+							return;
+	                 	}
+	                 	if(month<1) {
+	                 		JOptionPane.showMessageDialog(jpanelFirst, "备份时间最小为30天", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+							return;
+	                 	}	
+	                 	if(month>12) {
+	                 		JOptionPane.showMessageDialog(jpanelFirst, "备份份数最大为360天", "错误的输入",JOptionPane.WARNING_MESSAGE); 
+							return;
+	                 	}
 						Boolean rr = connectToContract(false);
 		           		if (!rr) {
 		           			
 		           			return;
 		           		}
 		           		
-		           	 int copycount = Integer.valueOf(txt_copyNum.getText().trim());
-                 	int month = Integer.valueOf((String) comboBox1.getSelectedItem())/30;    
+		           	    
 		                AddTask task = new AddTask(txt_file.getText().trim(), copycount, month);
 		                task.addPropertyChangeListener(task);
 		                task.execute();
@@ -1415,6 +1554,7 @@ public class CmdParser {
 					p_3line.add(b_canel);
 				 j.add(p_3line, BorderLayout.SOUTH);
 				f.setVisible(true);
+				f.pack();
 			}  
               
         });  
@@ -1465,6 +1605,8 @@ public class CmdParser {
 						
 				}else {
 					boolean deleteresult = true;
+					 CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+					 
 					for(int kk= 0; kk<filesHash.size();kk++) {
 						deleteresult &= deleteFile(filesHash.get(kk), false);			     			
 	           		}
@@ -1472,6 +1614,8 @@ public class CmdParser {
 						JOptionPane.showMessageDialog(null, "删除成功");
 					}
 					refreshFileList(); 
+					 CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+					 
 				}
 		          
                  button_delete.setEnabled(true);
@@ -1481,22 +1625,26 @@ public class CmdParser {
         });  
        
         processBar = new JProgressBar();// 创建进度条   
-        
+        processBar.setOpaque(f_opaque);
         processBar.setOrientation(JProgressBar.HORIZONTAL);
         processBar.setMinimum(0);
         processBar.setMaximum(100);
         processBar.setValue(0);
         processBar.setBorderPainted(false);
+       processBar.setVisible(false);
+        
         
         jpanelSecond.add(button_add);
         jpanelSecond.add(button_delete);
          lbl_process = new JLabel();
+         jpanelSecond.add(processBar);
         jpanelSecond.add(lbl_process);
-        jpanelSecond.add(processBar);
+        
                
         JLabel lbl5 =new JLabel(lbl4.getText());
         jpanelSecond.add(lbl5);//5
         JPanel jptmp5 = new JPanel();
+        jptmp5.setOpaque(f_opaque);
         jpanelSecond.add(jptmp5);//fill GAP
         
          listMode_up = new DefaultListModel<String>();
@@ -1545,17 +1693,18 @@ public class CmdParser {
         s2.weightx = 0;
         s2.weighty=0;
         layout2.setConstraints(button_delete, s2);
-        s2.fill = GridBagConstraints.NONE;
-        s2.gridwidth=1;
-        s2.weightx = 0;
-        s2.weighty=0;
-        layout2.setConstraints(lbl_process, s2);
-        s2.fill = GridBagConstraints.BOTH;
-        s2.gridwidth=0;
+       
+        s2.gridwidth=30;
         s2.weightx = 0;
         s2.weighty=0;
         layout2.setConstraints(processBar, s2);        
 
+        //s2.fill = GridBagConstraints.BOTH;
+        s2.gridwidth=0;
+        s2.weightx = 1;
+        s2.weighty=0;
+        layout2.setConstraints(lbl_process, s2);
+        
         
         s2.gridwidth=1;
         s2.weightx = 0;
@@ -1572,8 +1721,6 @@ public class CmdParser {
         layout2.setConstraints(jscrollList2, s2);
        
    
-        
-        frameShowed.setContentPane(jTabbedpane);
         frameShowed.addWindowListener(new WindowListener() {
 
 			@Override
@@ -1622,58 +1769,11 @@ public class CmdParser {
 			}});
         
        
-        
+        frameShowed.pack();
         frameShowed.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);       
         frameShowed.setVisible(true);
 	}
-/*	
-	protected static void freshTaskList(DefaultListModel lstModel_who) {
-	
-		Subscriber<StoreInfoEventResponse> subscriber = new Subscriber<StoreInfoEventResponse>() {
-	        @Override
-	        public void onCompleted() {
-	        	logfile.debug("onCompleted");
-	        }
 
-	        @Override
-	        public void onError(Throwable e) {
-	        	logfile.debug("onError:" + e.toString());
-	        }
-
-	        @Override
-	        public void onNext(StoreInfoEventResponse s) {
-	        	
-	        	if(s.fileName.startsWith("Qm")&& (s.fileName.length()==46)){
-	        		
-	        		String fileNameQm="";
-	        		for(int i=0;i<CmdParser.arr.size();i++) {
-	        			JSONObject objfile = CmdParser.arr.getJSONObject(i);
-	        			fileNameQm=objfile.get("hash").toString();
-	        			if(s.fileName.equalsIgnoreCase(fileNameQm)) {
-	        				// this task is mine
-	        				lstModel_who.addElement(objfile.get("name").toString() + " --> " + s.miner);
-	        				break;
-	        			}
-	        				
-	        			}
-	        			 
-	        		}
-	        		
-	        		
-	        	}
-	        	
-	        };
-	
-	   
-	    
-	    DefaultBlockParameter startBlock=DefaultBlockParameterName.EARLIEST;
-	  
-	   
-		Observable<StoreInfoEventResponse> ob=contract.storeInfoEventObservable(startBlock, DefaultBlockParameterName.LATEST);
-		ob.subscribe(subscriber);		
-	
-}
-*/
 
 	static boolean changeAccount(String keystore) {		
    		
@@ -2148,6 +2248,65 @@ public class CmdParser {
 			 return  jsonObject;
 		}
 	 
+	// get subnode from server
+		 static String getSubNodeInfoFromServer(String subNode) {
+			HttpURLConnection connection=null;
+			StringBuffer buffer = new StringBuffer();  
+			JSONObject jsonObject = null;
+			
+			 try {
+				URL url = new URL(con.getHttpAddress()+"v1/ipfs/sub-nodes/"+subNode);
+				
+					 connection = (HttpURLConnection) url.openConnection();
+					connection.setRequestMethod("GET");
+					connection.setConnectTimeout(15000);
+					 connection.setReadTimeout(60000);	
+					
+					 if (connection.getResponseCode() == 200) {
+
+						 InputStream inputStream = connection.getInputStream();    
+				            InputStreamReader inputStreamReader = new InputStreamReader(inputStream, "utf-8");    
+				            BufferedReader bufferedReader = new BufferedReader(inputStreamReader);    
+				    
+				            String str = null;    
+				            while ((str = bufferedReader.readLine()) != null) {
+				            	if (str.contains("updated_at")) {
+				            		buffer.append(str); 
+				            	}
+				                   
+				            }    
+				            bufferedReader.close();    
+				            inputStreamReader.close();    
+				            
+				            inputStream.close();    
+				            inputStream = null;    
+				               
+				            str = buffer.toString();
+				            if(str!=null) {
+				            	String[] srv = str.split(":");
+				            	if(srv.length>1) {
+				            		return srv[1];
+				            	}
+				            	
+				            }
+				            
+			            }else {
+			            	logfile.error("getSubNodeInfoFromServer  resp: " + connection.getResponseMessage());
+			            }
+				
+			} catch (Exception e) {
+				JOptionPane.showMessageDialog(null, e.toString(),"getSubNodeInfoFromServer",JOptionPane.ERROR_MESSAGE);
+				logfile.error("getSubNodeInfoFromServer  : " + e.toString());
+			}finally {			
+				 
+	            
+	            connection.disconnect();
+			}
+			 
+			 return  null;
+		}
+		 
+		 
 	private static JSONObject getHttpTrans(int page, int limit) {
 		HttpURLConnection connection=null;
 		StringBuffer buffer = new StringBuffer();  
@@ -2399,10 +2558,16 @@ public class CmdParser {
 	 static boolean deleteFile(String fileNameQm, boolean showSuccessMsg) {	
 		 
 			// send removeTask by IPFS
+		 if(!testIpfsOnLine()) {
+			 JOptionPane.showMessageDialog(null, "IPFS 不在线，请重新启动客户端");	 			
+		 }
+		 
+		
+		
 		 Process premove;
 		   	try {
-	 			String cmd[] = {ipfsCMD, "dht","removeTask",fileNameQm};
-	 			 premove = Runtime.getRuntime().exec(cmd);
+	 			String[] cmds = {ipfsCMD, "dht","removeTask",fileNameQm};
+	 			 premove = Runtime.getRuntime().exec(cmds);
 	 			premove.waitFor();
 	 		
 	 			if (premove.exitValue() != 0) {
@@ -2460,85 +2625,140 @@ public class CmdParser {
 	}
 
 
-	public static boolean reNewFile(String fileNameQm, String fsize, int fcount, int index) {
+	public static void reNewFile(String fileNameQm, String fsize, int fcount, int index) {
 		
-		Object[] possibleValues = { "30", "60", "90","180","360" };
-		Object selectedValue = JOptionPane.showInputDialog(null, "续费时长(天)", "续费",
-		JOptionPane.INFORMATION_MESSAGE, null,	possibleValues, possibleValues[0]); 
-		if(selectedValue==null) {
-			return false;
-		}
 		
-		int month = Integer.valueOf((String) selectedValue)/30;		
+		JDialog  f = new JDialog (frameShowed, "文件续费", true);
+	     f.setSize(800, 200);
+	     
+	     f.setLocationRelativeTo(null);
+	     f.setLayout(null);
+		JPanel j = new JPanel();
+		f.setContentPane(j);
+		j.setLayout(new BorderLayout());
+		
+		JLabel ldays = new JLabel("续费时长(天)：");
+		
+		int month = 1;	
 		int fileSize=Integer.valueOf(fsize);		
 		int needBalance = CmdParser.estimateValue((int) (fileSize/1024/1024)) *fcount * month;
+		JLabel lcost = new JLabel("      需要花费："+ String.valueOf(needBalance));
 		
-		int re = JOptionPane.showConfirmDialog(null, "续费需要花费 " + String.valueOf(needBalance),"确认", JOptionPane.OK_CANCEL_OPTION);
-		if (re != JOptionPane.OK_OPTION) {
-				return false;
-		}
+		Object[] possibleValues = { "30", "60", "90","180","360" };
+		DefaultComboBoxModel model = new DefaultComboBoxModel(possibleValues);
+		JComboBox comboBox1 = new JComboBox(model); 
+		comboBox1.addItemListener(new ItemListener() {
+			public void itemStateChanged(ItemEvent e) {
 			
-		Boolean result = connectToContract(false);
-		if (result) {
-			
-	 		if(  CmdParser.getCoinBalance()<needBalance) {
-	 			JOptionPane.showMessageDialog(null, "余额不足 ! 需要 "+ needBalance);
-	 			return false;
-	 		}
-	 		
-	 		 		
-			String valueStr = String.valueOf(needBalance);
-			BigInteger value = Convert.toWei(valueStr + ".0", Convert.Unit.ETHER).toBigInteger();
-			BigInteger monthNum = BigInteger.valueOf(month);
-			
-			TransactionReceipt transactionReceipt;
-			try {
-				transactionReceipt = CmdParser.contract.reNewFileDate(fileNameQm,monthNum,value).sendAsync().get();
-				String status = transactionReceipt.getStatus();
-				if(!status.contains("1")) {
-					logfile.error("\n reNewFileDate fail, tx=" + transactionReceipt.toString());
-					logfile.error("\n reNewFileDate fail, fileHash=" + fileNameQm + " month=" + monthNum + " value=" + value);
-					 JOptionPane.showMessageDialog(null,  " 交易失败！");	
-					 return false;
-				}
+			int month = Integer.valueOf((String) e.getItem())/30;
 				
-				 boolean b_res = false;
-			        for (ReNewFileInfoEventResponse event : CmdParser.contract.getReNewFileInfoEvents(transactionReceipt)) {
-			        	if(!event.owner.equalsIgnoreCase(CmdParser.con.getAccount())) {
-			        		continue;
-			        	}
-			        	b_res = true;
-			        	// tell the server
-			        	putHttpFile(fileNameQm, month*30);
-			        	postHttpTrans(2, valueStr,transactionReceipt.getTransactionHash(),fsize) ;
-			        	
-			        	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm");
-						String item = CmdParser.formatListItem("[-]", transactionReceipt.getTransactionHash(), "-"+ valueStr, format.format(new Date()));
-						listMode_up.insertElementAt(item, 0);
-						// update view
-						BigInteger utc = CmdParser.contract.getDate(fileNameQm).sendAsync().get();										            
-						dtmFileList.setValueAt(Util.getTimeFromUTCBigInteger(utc), index, 5);
-						
-						JOptionPane.showMessageDialog(null, "续费成功！ ");
-						
-						return true;
-			        }
-					
-			        if(!b_res) {
-			        	logfile.error("\n reNewFileDate fail, tx=" + transactionReceipt.toString());
-			        	logfile.error("\n reNewFileDate fail, fileHash=" + fileNameQm + " month=" + monthNum + " value=" + value);
-					    JOptionPane.showMessageDialog(null,  " 没有收到链上的消息，上链失败！");	
-					 }
-
-				
-			} catch (Exception e) {
-				logfile.error("\n reNewFile" + e.getMessage());
+			int needBalance = CmdParser.estimateValue((int) (fileSize/1024/1024)) *fcount * month;
+			lcost.setText("      需要花费："+ String.valueOf(needBalance));
 			}
-	
-		}
+			});
 		
 		
-		return false;
+		
+		JPanel j_first = new JPanel();
+		j_first.setLayout(new FlowLayout());
+		j_first.add(ldays);
+		j_first.add(comboBox1);
+		j_first.add(lcost);
+		
+		JPanel j_second = new JPanel();
+		j_second.setLayout(new FlowLayout());
+		JButton b_ok = new JButton("确定");
+		b_ok.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				f.setVisible(false);
+				Boolean result = connectToContract(false);
+				if (result) {
+					int month = Integer.valueOf((String) comboBox1.getSelectedItem())/30;
+					int needBalance = CmdParser.estimateValue((int) (fileSize/1024/1024)) *fcount * month;
+			 		if(  CmdParser.getCoinBalance()<needBalance) {
+			 			JOptionPane.showMessageDialog(null, "余额不足 ! 需要 "+ needBalance);
+			 			f.dispose();
+			 			return ;
+			 		}
+			 		
+			 		 		
+					String valueStr = String.valueOf(needBalance);
+					BigInteger value = Convert.toWei(valueStr + ".0", Convert.Unit.ETHER).toBigInteger();
+					BigInteger monthNum = BigInteger.valueOf(month);
+					
+					TransactionReceipt transactionReceipt;
+					try {
+						transactionReceipt = CmdParser.contract.reNewFileDate(fileNameQm,monthNum,value).sendAsync().get();
+						String status = transactionReceipt.getStatus();
+						if(!status.contains("1")) {
+							logfile.error("\n reNewFileDate fail, tx=" + transactionReceipt.toString());
+							logfile.error("\n reNewFileDate fail, fileHash=" + fileNameQm + " month=" + monthNum + " value=" + value);
+							 JOptionPane.showMessageDialog(null,  " 交易失败！");	
+							 f.dispose();
+							 return ;
+						}
+						
+						 boolean b_res = false;
+					        for (ReNewFileInfoEventResponse event : CmdParser.contract.getReNewFileInfoEvents(transactionReceipt)) {
+					        	if(!event.owner.equalsIgnoreCase(CmdParser.con.getAccount())) {
+					        		continue;
+					        	}
+					        	b_res = true;
+					        	// tell the server
+					        	putHttpFile(fileNameQm, month*30);
+					        	postHttpTrans(2, valueStr,transactionReceipt.getTransactionHash(),fsize) ;
+					        	
+					        	SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm");
+								String item = CmdParser.formatListItem("[-]", transactionReceipt.getTransactionHash(), "-"+ valueStr, format.format(new Date()));
+								listMode_up.insertElementAt(item, 0);
+								// update view
+								BigInteger utc = CmdParser.contract.getDate(fileNameQm).sendAsync().get();										            
+								dtmFileList.setValueAt(Util.getTimeFromUTCBigInteger(utc), index, 5);
+								
+								JOptionPane.showMessageDialog(null, "续费成功！ ");
+								logfile.info("\n reNewFileDate success, tx=" + transactionReceipt.toString());
+								getCoinBalance();
+								f.dispose();
+								return ;
+					        }
+							
+					        if(!b_res) {
+					        	logfile.error("\n reNewFileDate fail, tx=" + transactionReceipt.toString());
+					        	logfile.error("\n reNewFileDate fail, fileHash=" + fileNameQm + " month=" + monthNum + " value=" + value);
+							    JOptionPane.showMessageDialog(null,  " 没有收到链上的消息，上链失败！");	
+							 }
+
+						
+						
+					} catch (Exception e1) {
+						logfile.error("\n reNewFile" + e1.getMessage());
+					}
+			
+				}
+				f.dispose();
+			}
+			
+		});
+		JButton b_cancel = new JButton("取消");
+		b_cancel.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+				f.dispose();
+			}
+			
+		});
+		j_second.add(b_ok)	;
+		j_second.add(b_cancel)	;
+		
+		j.setLayout(new BorderLayout());
+		j.add(j_first, BorderLayout.CENTER);
+		j.add(j_second, BorderLayout.SOUTH);
+		f.setVisible(true);
+		f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 	}
 
 
@@ -2547,7 +2767,8 @@ public class CmdParser {
 		
 		JFrame ff = new JFrame("文件存储详情");
 	     ff.setSize(500, 300);
-	     ff.setLocation(200, 200);
+	     //ff.setLocation(200, 200);
+	     ff.setLocationRelativeTo(null);	     
 	     ff.setLayout(null);
 	     
 	     JPanel pp = new JPanel();
@@ -2576,16 +2797,84 @@ public class CmdParser {
     			 count = obj.getJSONArray("info");
     		 }
     	 }
-    	 for (int i=0;i<count.size();i++) {
-    		 JSONObject objfile = count.getJSONObject(i);	
-    		 lst.addElement(" 节点地址：  "+ (String) objfile.getString("address") );
+    	 if (count.size() == 0) {
+    		 lst.addElement(" 该文件还未被其他节点保存，请耐心等待  " );
+    	 }else {
+    		 for (int i=0;i<count.size();i++) {
+        		 JSONObject objfile = count.getJSONObject(i);	
+        		 lst.addElement(" 节点地址：  "+ (String) objfile.getString("address") );
+        	 } 
     	 }
+    	 
       }else {
     	  lst.addElement(" 该文件还未被其他节点保存，请耐心等待  " );
       } 
       
       ff.setVisible(true);
       ff.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+	}
+	
+	
+	protected boolean checkForProvider(String FileName) {
+
+		 //check the provider
+		 JSONObject obj = CmdParser.getFileStorageFromServer(FileName);
+		  if (obj == null ) {
+			  // try again
+			  obj = CmdParser.getFileStorageFromServer(FileName);
+		  }
+	      if(obj!=null) {
+	    	 JSONArray count = obj.getJSONArray("info");
+	    	 if (count.size() == 0) {
+	    		 //try again
+	    		 obj = CmdParser.getFileStorageFromServer(FileName);
+	    		 if(obj != null) {
+	    			 count = obj.getJSONArray("info");
+	    		 }
+	    	 }
+	    	 if (count.size() == 0) {
+	    		 
+	    		 return false;
+	    	 }else {
+	    		 Calendar ca=Calendar.getInstance();
+				ca.setTime(new Date());
+				ca.add(Calendar.HOUR_OF_DAY, -2); // 2 hours ago	
+				Date limit = ca.getTime();	
+	    		 for (int i=0;i<count.size();i++) {
+	        		 JSONObject objfile = count.getJSONObject(i);		        		 
+	        		 String UTCStr = CmdParser.getSubNodeInfoFromServer((String) objfile.getString("address") );
+	        		 int index = UTCStr.indexOf(".");
+	     			if(index>0) {
+	     				UTCStr = UTCStr.substring(0, index)+"Z\"";
+	     			}
+	     			 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+	     		     sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+	     		     Date utcdate;
+					try {
+						utcdate = sdf.parse(UTCStr);
+						 if(utcdate.before(limit)) { // overDue
+		     						
+		     					continue;
+		     			 }else {
+		     				 // found provider
+		     				 return true;
+		     			 }
+					} catch (ParseException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} 
+	     		    
+	    		 
+	    		 } 
+	    		 return true;
+	    	 }
+	    	 
+	      }else {
+	    	  
+	    		 return false;
+	      } 
+	      
+		
 	}
 }
 
@@ -2719,6 +3008,10 @@ public void actionPerformed(ActionEvent e) {
 	 
 	
     if(text.contains("下载")) {
+    	int ret = JOptionPane.showConfirmDialog(null, "确定下载文件 " + fileName + "?" , "下载确认", JOptionPane.OK_CANCEL_OPTION);
+    	if(ret != JOptionPane.OK_OPTION) {
+    		return;
+    	}
     	
     	DownloadTask task = new DownloadTask(fileNameQm,fileName);
          task.addPropertyChangeListener(task);
@@ -2731,12 +3024,17 @@ public void actionPerformed(ActionEvent e) {
     	if(ret != JOptionPane.OK_OPTION) {
     		return;
     	}
+    	 CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		 
     	// delete    	
     	if(CmdParser.deleteFile(fileNameQm, true)) {
     		//Deselects the rows from index0 to index1, inclusive.
-    		table.removeRowSelectionInterval(index, index);
-    		CmdParser.dtmFileList.removeRow(index);
-    	}    	
+    		//table.removeRowSelectionInterval(index, index);
+    		//CmdParser.dtmFileList.removeRow(index);
+    		CmdParser.refreshFileList();
+    	}  
+    	 CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+		 
     	return;
     }
     
@@ -2746,10 +3044,9 @@ public void actionPerformed(ActionEvent e) {
 		CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		CmdParser.frameShowed.getGlassPane().setVisible(true);
 		
-    	if(CmdParser.reNewFile(fileNameQm, filesize, file_count,index)) {
-    		CmdParser.dtmFileList.fireTableDataChanged();
-    	}
-    	
+    	CmdParser.reNewFile(fileNameQm, filesize, file_count,index);
+    	CmdParser.dtmFileList.fireTableDataChanged();
+    	    	
     	
 		CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
 		CmdParser.frameShowed.getGlassPane().setVisible(false);
@@ -2781,6 +3078,7 @@ class AddTask extends SwingWorker<Boolean, Void> implements PropertyChangeListen
     	CmdParser.getCoinBalance();// set enable according to balance
     	  setProgress(0);
     	  CmdParser.processBar.setBorderPainted(false); 
+    	  CmdParser.processBar.setVisible(false);
     	  CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));    	  
     	  CmdParser.frameShowed.getGlassPane().setVisible(false);
 
@@ -2791,7 +3089,7 @@ class AddTask extends SwingWorker<Boolean, Void> implements PropertyChangeListen
 		CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
 		 CmdParser.frameShowed.getGlassPane().setVisible(true);
 		CmdParser.processBar.setBorderPainted(true); 
-        
+		CmdParser.processBar.setVisible(true);
          setProgress(0);
         
          if (!CmdParser.testIpfsOnLine()) {
@@ -2811,69 +3109,71 @@ class AddTask extends SwingWorker<Boolean, Void> implements PropertyChangeListen
  			JOptionPane.showMessageDialog(null, "余额不足 ! 需要 "+ needBalance);
  			return false;
  		}
+ 		
  		 setProgress(10);
  		 String FileAdd = FileName;
  		String aeskey="";
  		
-			//read public key from dist
-			File fkey = new File("server-public.pem");
-			if(fkey.exists()) {
-					Process pp;
-					try {
-						  
-						    if(CmdParser.osName.toLowerCase().startsWith("win")){  
-						    	pp = Runtime.getRuntime().exec("cryptoTest enc-r "+ FileName);
-						    }else {//linux
-						    	pp = Runtime.getRuntime().exec("./cryptoTest enc-r "+ FileName);
-						    } 
-						CmdParser.lbl_process.setText("加密文件 .....");
-						pp.waitFor();
-						if (pp.exitValue() != 0) {
-							String tag = "cryptoTest enc-r with " + pp.exitValue();
-							CmdParser.clearForProcess(tag, pp,pp.getErrorStream());
-							CmdParser.clearForProcess(tag, pp,pp.getInputStream());
-							JOptionPane.showMessageDialog(null, "加密失败! code = " + pp.exitValue(), "失败" , JOptionPane.ERROR_MESSAGE);
-							pp.destroy();
-							return false;
-						}else {
-							BufferedReader reader = new BufferedReader(new InputStreamReader(pp.getInputStream()));
-				 			String aeskeyraw = reader.readLine();	
-				 			 int beginIndex = aeskeyraw.indexOf("(");
-				 			int endIndex = aeskeyraw.indexOf(")");
-				 			aeskey = aeskeyraw.substring(beginIndex+1, endIndex).trim();				 			
-							CmdParser.clearForProcess("cryptoTest enc-r success ",pp,pp.getInputStream());
-							FileAdd = "tmp-aes";
-							pp.destroy();
-						}
-					} catch (Exception e) {
-						
-						JOptionPane.showMessageDialog(null, e.toString(),"加密失败!",JOptionPane.ERROR_MESSAGE);
-						CmdParser.logfile.error("cryptoTest enc-r " + e.toString());
+		//read public key from dist
+		File fkey = new File("server-public.pem");
+		if(fkey.exists()) {
+				Process pp;
+				try {
+					  
+					    if(CmdParser.osName.toLowerCase().startsWith("win")){ 
+					    	String[] cmds = {"cryptoTest", "enc-r", FileName};
+					    	pp = Runtime.getRuntime().exec(cmds);
+					    }else {//linux
+					    	String[] cmds = {"./cryptoTest", "enc-r", FileName};
+					    	pp = Runtime.getRuntime().exec(cmds);
+					    } 
+					CmdParser.lbl_process.setText("加密文件 .....");
+					pp.waitFor();
+					if (pp.exitValue() != 0) {
+						String tag = "cryptoTest enc-r with " + pp.exitValue();
+						CmdParser.clearForProcess(tag, pp,pp.getErrorStream());
+						CmdParser.clearForProcess(tag, pp,pp.getInputStream());
+						JOptionPane.showMessageDialog(null, "加密失败! code = " + pp.exitValue(), "失败" , JOptionPane.ERROR_MESSAGE);
+						pp.destroy();
 						return false;
-					} 
-				
-			}else {
-				JOptionPane.showMessageDialog(null, "缺少server-public.pem文件,无法加密,请联系客服。");
-				return false;
-			}				
-		
+					}else {
+						BufferedReader reader = new BufferedReader(new InputStreamReader(pp.getInputStream()));
+			 			String aeskeyraw = reader.readLine();	
+			 			 int beginIndex = aeskeyraw.indexOf("(");
+			 			int endIndex = aeskeyraw.indexOf(")");
+			 			aeskey = aeskeyraw.substring(beginIndex+1, endIndex).trim();				 			
+						CmdParser.clearForProcess("cryptoTest enc-r success ",pp,pp.getInputStream());
+						FileAdd = "tmp-aes";
+						pp.destroy();
+					}
+				} catch (Exception e) {
+					
+					JOptionPane.showMessageDialog(null, e.toString(),"加密失败!",JOptionPane.ERROR_MESSAGE);
+					CmdParser.logfile.error("cryptoTest enc-r " + e.toString());
+					return false;
+				} 
+			
+		}else {
+			JOptionPane.showMessageDialog(null, "缺少server-public.pem文件,无法加密,请联系客服。");
+			return false;
+		}				
+	
  		
  		//STEP 1. get file list for further getFile
  		
  		Process p;
+ 		CmdParser.lbl_process.setText("保存到本地IPFS .....");
+		 setProgress(20);
  		try {
- 			String cmd[] = {CmdParser.ipfsCMD, "add",FileAdd, "-q"};
- 			p = Runtime.getRuntime().exec(cmd);
+ 			String[] cmds = {CmdParser.ipfsCMD, "add",FileAdd, "-q"};
+ 			p = Runtime.getRuntime().exec(cmds);
  		
  		} catch (IOException e) {
  			JOptionPane.showMessageDialog(null, e.toString(),"start IPFS ADD",JOptionPane.ERROR_MESSAGE);
  			CmdParser.logfile.error("ipfs add " + e.toString());
  			return false;
  		}
- 		CmdParser.lbl_process.setText("保存到本地IPFS .....");
- 		 setProgress(20);
- 		
- 		InputStream is=null;
+ 				
  		
  		try {
  				p.waitFor();
@@ -2893,7 +3193,7 @@ class AddTask extends SwingWorker<Boolean, Void> implements PropertyChangeListen
  		
  		
  		try {
- 			 is = p.getInputStream();
+ 			InputStream is = p.getInputStream();
  			BufferedReader reader = new BufferedReader(new InputStreamReader(is));
  			StringBuffer sb = new StringBuffer(); 			
  			String s = reader.readLine();	
@@ -2905,11 +3205,12 @@ class AddTask extends SwingWorker<Boolean, Void> implements PropertyChangeListen
  			CmdParser.logfile.info("ipfs add success : " + s);
  			is.close();
  			p.destroy();
+ 			
  			 setProgress(30);
- 			 //remove tmp-aes
+ 			
  			 File ftmp = new File(FileAdd);
  			 if(ftmp.exists()) {
- 				 ftmp.delete();
+ 				 ftmp.delete(); //remove tmp-aes
  			 }
  			 
  			// extract QM.... 
@@ -2918,109 +3219,123 @@ class AddTask extends SwingWorker<Boolean, Void> implements PropertyChangeListen
  			if(sourceStrArray.length==1) {
  				nameindex = 0;
  			}
- 				if(sourceStrArray[nameindex].startsWith("Qm")&& (sourceStrArray[nameindex].length()==46)) {
- 					fileNameQM = sourceStrArray[nameindex];
- 					
- 					CmdParser.lbl_process.setText("上链支付 .....");
- 					 setProgress(40);
- 					// upload request
- 					try {
- 						String valueStr = String.valueOf(needBalance);
- 						BigInteger value = Convert.toWei(valueStr + ".0", Convert.Unit.ETHER).toBigInteger();
- 						BigInteger copyNum = BigInteger.valueOf(copycount);
- 						BigInteger fileSize = BigInteger.valueOf(fileSizeInM);
- 						BigInteger months = BigInteger.valueOf(month);
- 						TransactionReceipt transactionReceipt =CmdParser.contract.uploadFile(fileNameQM,copyNum,fileSize,months,value).sendAsync().get();
- 						String status = transactionReceipt.getStatus();
- 						if(!status.contains("1")) {
- 							CmdParser.logfile.error("uploadFile fail, tx=" + transactionReceipt.toString());
- 							CmdParser.logfile.error("\n uploadFile fail, fileHash=" + fileNameQM + "copyNum=" + copyNum + " fileSize=" +fileSize + " month=" + months + " value=" + value);
- 							JOptionPane.showMessageDialog(null,  " 交易失败！");	
- 							return false;
- 						}
- 						
- 						File fff = new File(FileName);
- 						CmdParser.postHttpTrans(2, valueStr,transactionReceipt.getTransactionHash(),String.valueOf(fff.length())) ;
- 						SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm");
- 						String item = CmdParser.formatListItem("[-]", transactionReceipt.getTransactionHash(), "-"+ valueStr, format.format(new Date()));
- 						CmdParser.listMode_up.insertElementAt(item, 0);
- 						CmdParser.lbl_process.setText("支付确认 .....");
- 						 setProgress(60);
- 						// Events enable us to log specific events happening during the execution of our smart
- 				        // contract to the blockchain. Index events cannot be logged in their entirety.
- 				        // For Strings and arrays, the hash of values is provided, not the original value.
- 				        // For further information, refer to https://docs.web3j.io/filters.html#filters-and-events
- 						 boolean b_res = false;
- 				        for (StorageCoin.UploadInfoEventResponse event : CmdParser.contract.getUploadInfoEvents(transactionReceipt)) {
- 				        	if(!event.owner.equalsIgnoreCase(CmdParser.con.getAccount())) {
- 				        		continue;
- 				        	}
- 				        	b_res = true;
- 				        	
- 				       	// send addTask by IPFS
- 		 				   	try {
- 		 				   		setProgress(70);
- 		 			 			String cmd[] = {CmdParser.ipfsCMD, "dht","addTask",fileNameQM,"-n", Integer.toString(copycount)};
- 		 			 			Process padd = Runtime.getRuntime().exec(cmd);
- 		 			 			CmdParser.lbl_process.setText("发布任务 .....");
- 		 			 			padd.waitFor();
- 		 			 		
- 		 			 			if (padd.exitValue() != 0) {
- 		 			 				String tttag = "dht addTask "	+ 	fileNameQM + " fail with code " + padd.exitValue();
- 			 			 			CmdParser.clearForProcess(tttag,padd, padd.getErrorStream()); 	
- 			 			 			CmdParser.clearForProcess(tttag,padd, padd.getInputStream()); 
- 			 			 			JOptionPane.showMessageDialog(null, "IPFS addTask 失败！");
- 			 			 			return false;
- 		 			 				}
- 		 			 		} catch (IOException e) {
- 		 			 			JOptionPane.showMessageDialog(null, e.toString(),"add dht addTask",JOptionPane.ERROR_MESSAGE);
- 		 			 			CmdParser.logfile.error("add dht addTask fail " + e.toString());
- 		 			 			return false;
- 		 			 		}
- 		 				   	
- 		 				  CmdParser.lbl_process.setText("通知服务器 .....");
-				        	 setProgress(80);	
- 				        	String ll = Long.toString(f.length(),10);
- 				        	CmdParser.postHttpQuestWithAes( FileName, fileNameQM, aeskey,ll,copycount, month*30);
- 				        	
- 				        	CmdParser.refreshFileList();
- 				       
- 				        	
- 				   		setProgress(100); 
- 				   		
- 				   		if(aeskey.length()>2) {
- 				   			JOptionPane.showMessageDialog(null, "上传 "+FileName + " 成功(密文)!");
- 				   		}else {
- 				   			JOptionPane.showMessageDialog(null, "上传 "+FileName + " 成功(明文)!");
- 				   		}
- 				   		
- 					}
- 				       if(!b_res) {
- 				        JOptionPane.showMessageDialog(null,  " 没有收到链上的消息，上链失败！");	
- 				       CmdParser.logfile.error("uploadFile fail, tx=" + transactionReceipt.toString());
- 				       CmdParser.logfile.error("\n uploadFile fail, fileHash=" + fileNameQM + "copyNum=" + copyNum + " fileSize=" +fileSize + " month=" + months + " value=" + value);
- 	 					
- 				       }
- 				        
- 				       CmdParser.getCoinBalance();
- 				      
- 					} catch (Exception e) {
- 						JOptionPane.showMessageDialog(null, e.toString(),"ipfs add",JOptionPane.ERROR_MESSAGE);
- 						CmdParser.logfile.error("add file " + e.toString());
- 					} 
- 					
- 				}else {
- 					JOptionPane.showMessageDialog(null, "add出错  :" + s,"ipfs add",JOptionPane.ERROR_MESSAGE);
- 		 			return false;
- 				}
- 			
- 			
- 			
+			if(sourceStrArray[nameindex].startsWith("Qm")&& (sourceStrArray[nameindex].length()==46)) {
+				fileNameQM = sourceStrArray[nameindex];
+			}else {
+				JOptionPane.showMessageDialog(null, "add出错  :" + s,"ipfs add",JOptionPane.ERROR_MESSAGE);
+	 			return false;
+			}
  		} catch (IOException e) {
  			JOptionPane.showMessageDialog(null, e.toString(),"ipfs add",JOptionPane.ERROR_MESSAGE );
  			CmdParser.logfile.error("add file " + e.toString());
  			return false;
- 		}      
+ 		}     
+			
+			
+			
+			CmdParser.lbl_process.setText("上链支付 .....");
+			 setProgress(40);
+			
+			try {
+				String valueStr = String.valueOf(needBalance );
+				BigInteger value = Convert.toWei(valueStr + ".0", Convert.Unit.ETHER).toBigInteger();
+				BigInteger copyNum = BigInteger.valueOf(copycount);
+				BigInteger fileSize = BigInteger.valueOf(fileSizeInM);
+				BigInteger months = BigInteger.valueOf(month);
+				TransactionReceipt transactionReceipt=null;
+				try {
+					transactionReceipt =CmdParser.contract.uploadFile(fileNameQM,copyNum,fileSize,months,value).sendAsync().get();
+					String status = transactionReceipt.getStatus();
+					if(!status.contains("1")) {
+						CmdParser.logfile.error("uploadFile fail, tx=" + transactionReceipt.toString());
+						CmdParser.logfile.error("\n uploadFile fail, fileHash=" + fileNameQM + "copyNum=" + copyNum + " fileSize=" +fileSize + " month=" + months + " value=" + value);
+						JOptionPane.showMessageDialog(null,  " 交易失败！");	
+						return false;
+					}else {
+						CmdParser.logfile.info("uploadFile success, tx=" + transactionReceipt.toString());
+					}
+				}catch (Exception e) {
+					JOptionPane.showMessageDialog(null,  " 交易失败！" + e.toString());	
+					CmdParser.logfile.error("\n uploadFile fail, fileHash=" + fileNameQM + "copyNum=" + copyNum + " fileSize=" +fileSize + " month=" + months + " value=" + value);
+					return false;	
+				}
+ 						
+				File fff = new File(FileName);
+				
+ 				CmdParser.lbl_process.setText("支付确认 .....");
+ 				setProgress(60);
+ 				 boolean b_res = false;
+		        for (StorageCoin.UploadInfoEventResponse event : CmdParser.contract.getUploadInfoEvents(transactionReceipt)) {
+		        	if(!event.owner.equalsIgnoreCase(CmdParser.con.getAccount())) {
+		        		continue;
+		        	}
+		        	b_res = true;
+		        	
+		        	CmdParser.postHttpTrans(2, valueStr,transactionReceipt.getTransactionHash(),String.valueOf(fff.length())) ;
+					SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd-HH:mm");
+					String item = CmdParser.formatListItem("[-]", transactionReceipt.getTransactionHash(), "-"+ valueStr, format.format(new Date()));
+					CmdParser.listMode_up.insertElementAt(item, 0);
+					
+					
+		       	// send addTask by IPFS
+ 				   	try {
+ 				   		setProgress(60);
+ 			 			String[] cmds = {CmdParser.ipfsCMD, "dht","addTask",fileNameQM,"-n", Integer.toString(copycount)};
+ 			 			Process padd = Runtime.getRuntime().exec(cmds);
+ 			 			CmdParser.lbl_process.setText("发布任务 .....");
+ 			 			padd.waitFor();
+ 			 		
+ 			 			if (padd.exitValue() != 0) {
+ 			 				String tttag = "dht addTask "	+ 	fileNameQM + " fail with code " + padd.exitValue();
+	 			 			CmdParser.clearForProcess(tttag,padd, padd.getErrorStream()); 	
+	 			 			CmdParser.clearForProcess(tttag,padd, padd.getInputStream()); 
+	 			 			JOptionPane.showMessageDialog(null, "IPFS addTask 失败！");
+	 			 			return false;
+ 			 				}
+ 			 		} catch (IOException e) {
+ 			 			JOptionPane.showMessageDialog(null, e.toString(),"add dht addTask",JOptionPane.ERROR_MESSAGE);
+ 			 			CmdParser.logfile.error("add dht addTask fail " + e.toString());
+ 			 			return false;
+ 			 		}
+ 				   	
+ 				  CmdParser.lbl_process.setText("通知服务器 .....");
+		        	 setProgress(80);	
+		        	String ll = Long.toString(f.length(),10);
+		        	CmdParser.postHttpQuestWithAes( FileName, fileNameQM, aeskey,ll,copycount, month*30);
+		        	
+		        	CmdParser.refreshFileList();
+		       
+		        	//wait for 
+		        	
+		   		setProgress(100); 
+		   		
+		   		if(aeskey.length()>2) {
+		   			JOptionPane.showMessageDialog(null, "上传 "+FileName + " 成功(密文)! 提示：您的文件将在一段时间后被其他节点保存，请不要立即退出客户端！");
+		   		}else {
+		   			JOptionPane.showMessageDialog(null, "上传 "+FileName + " 成功(明文)! 提示：您的文件将在一段时间后被其他节点保存，请不要立即退出客户端！");
+		   		}
+		   		
+		   		     
+	            //  CmdParser.sendAddTaskToProcess( FileName,  fileNameQM,  copycount); //这个就是程序界面初始化
+	             
+		   		
+			}
+		        
+	       if(!b_res) {
+	        JOptionPane.showMessageDialog(null,  " 没有收到链上的消息，上链失败！");	
+	       CmdParser.logfile.error("uploadFile fail, tx=" + transactionReceipt.toString());
+	       CmdParser.logfile.error("\n uploadFile fail, fileHash=" + fileNameQM + "copyNum=" + copyNum + " fileSize=" +fileSize + " month=" + months + " value=" + value);
+			
+	       }
+	        
+	       CmdParser.getCoinBalance();
+	      
+		} catch (Exception e) {
+			JOptionPane.showMessageDialog(null, e.toString(),"ipfs add",JOptionPane.ERROR_MESSAGE);
+			CmdParser.logfile.error("add file 上链失败 " + e.toString());
+			 
+		} 
+ 					
  		
  		CmdParser.lbl_process.setText("");
 		return true;
@@ -3055,13 +3370,14 @@ class DownloadTask extends SwingWorker<Boolean, Void> implements PropertyChangeL
         	 JOptionPane.showMessageDialog(null, "IPFS 掉线 ！请重新启动客户端");
   			return false;
          } 
-		 
+		 CmdParser.processBar.setVisible(true);
 		 CmdParser.processBar.setBorderPainted(true);
-			CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-			CmdParser.frameShowed.getGlassPane().setVisible(true);
+		CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+		CmdParser.frameShowed.getGlassPane().setVisible(true);
 			
-			//TODO: check if provider is online
-		
+			
+			 
+			
 		try {
 			setProgress(30);
 		   
@@ -3071,7 +3387,7 @@ class DownloadTask extends SwingWorker<Boolean, Void> implements PropertyChangeL
 	        
 			try {
 				String[] cmd = {CmdParser.ipfsCMD, "get", FileName};
-				CmdParser.logfile.info("\n [cmd] := " + cmd);
+				CmdParser.logfile.info("\n [cmd] := " + cmd.toString());
 				p = Runtime.getRuntime().exec(cmd);
 				
 			} catch (IOException e) {
@@ -3109,8 +3425,6 @@ class DownloadTask extends SwingWorker<Boolean, Void> implements PropertyChangeL
 				if(f.exists()) {
 					f = new File(new Date().getTime() +"__"+ f.getName());
 				}
-				
-				
 				
 					//read public key from dist
 					File fkey = new File("public.pem");
@@ -3213,6 +3527,7 @@ class DownloadTask extends SwingWorker<Boolean, Void> implements PropertyChangeL
     	CmdParser.getCoinBalance();// set enable according to balance
     	  setProgress(0);
     	  CmdParser.processBar.setBorderPainted(false); 
+    	  CmdParser.processBar.setVisible(false); 
     	  CmdParser.frameShowed.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
     	  CmdParser.frameShowed.getGlassPane().setVisible(false);
 

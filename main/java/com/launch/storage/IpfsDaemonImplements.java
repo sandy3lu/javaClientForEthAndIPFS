@@ -190,7 +190,7 @@ class TaskRead implements Runnable{
 					if(!CmdParser.ipfsDaemonReady) {
 						if(line.contains("Daemon is ready")) {
 							CmdParser.ipfsDaemonReady = true;
-							System.out.println(" found " + CmdParser.ipfsDaemonReady);
+							//System.out.println(" found " + CmdParser.ipfsDaemonReady);
 						}
 					}
 					
